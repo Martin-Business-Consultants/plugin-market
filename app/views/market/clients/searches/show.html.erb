@@ -1,0 +1,6 @@
+<% @page_title = "#{@client.name} · Search" %>
+<% content_for :header do %>
+  <%= parent_page @client.name, market_client_path(@client) %>
+<% end %>
+<%= render "market/nav", current: :clients %>
+<%= render "market/clients/searches/search", data: @data, manage: can?(:manage_market) %>

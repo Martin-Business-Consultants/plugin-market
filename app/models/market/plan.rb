@@ -15,6 +15,7 @@ module Market
 
     serialize :industry_suggestion, coder: JSON, type: Hash
     serialize :competitor_suggestions, coder: JSON, type: Array
+    serialize :keyword_suggestions, coder: JSON, type: Array
 
     validates :state, inclusion: { in: STATES }
 
@@ -40,6 +41,11 @@ module Market
       end
     end
 
+    def new_keyword_suggestions
+      tracked = Keyword.where(client_id: client_id).pluck(:keyword)
+      Array(keyword_suggestions) - tracked
+    end
+
     def industry_suggestion_new?
       name = industry_suggestion&.dig("name").to_s
       name.present? && !Profile.find_by(client_id: client_id)&.industry&.name.to_s.casecmp?(name)
@@ -51,7 +57,8 @@ module Market
       answer = ::Ai.structured(user: user, name: "market_plan", schema: schema, instructions: instructions, prompt: Brief.new(client).to_s)
       transaction do
         update!(summary: answer["summary"].to_s.strip, positioning: answer["positioning"].to_s.strip.presence,
-          industry_suggestion: industry_from(answer["industry"]), competitor_suggestions: competitors_from(answer["competitors_to_check"]))
+          industry_suggestion: industry_from(answer["industry"]), competitor_suggestions: competitors_from(answer["competitors_to_check"]),
+          keyword_suggestions: keywords_from(answer["keywords_to_track"]))
         add_opportunities(Array(answer["opportunities"]))
       end
       update!(state: "ready", finished_at: Time.current)
@@ -77,6 +84,11 @@ module Market
         end.first(8)
       end
 
+      def keywords_from(answers)
+        tracked = Keyword.where(client_id: client_id).pluck(:keyword)
+        Array(answers).map { it.to_s.strip.squeeze(" ").downcase }.compact_blank.uniq.reject { tracked.include?(it) }.first(15)
+      end
+
       def add_opportunities(answers)
         existing = Opportunity.where(client_id: client_id).pluck(:title).map(&:downcase)
         answers.first(MAX_OPPORTUNITIES).each do |answer|
@@ -91,7 +103,7 @@ module Market
       end
 
       def schema
-        { type: "object", additionalProperties: false, required: %w[summary positioning industry competitors_to_check opportunities], properties: {
+        { type: "object", additionalProperties: false, required: %w[summary positioning industry competitors_to_check keywords_to_track opportunities], properties: {
           summary: { type: "string", description: "The big picture of this client's market in 3 to 6 sentences: where they stand, who's winning and why, and what matters most now." },
           positioning: { type: "string", description: "The angle to win on, in one or two sentences: what they can own that competitors don't." },
           industry: { type: "object", additionalProperties: false, required: %w[name naics_code why], properties: {
@@ -103,6 +115,7 @@ module Market
             type: "object", additionalProperties: false, required: %w[name website why], properties: {
               name: { type: "string" }, website: { type: "string", description: "Their site's domain, or \"\" when unsure." }, why: { type: "string" }
             } } },
+          keywords_to_track: { type: "array", description: "Up to 15 searches this client's customers make that are worth winning and watching, as they'd type them, with the place where it matters (\"emergency dentist grand rapids\"). Not ones already tracked.", items: { type: "string" } },
           opportunities: { type: "array", items: { type: "object", additionalProperties: false,
             required: %w[channel title detail evidence impact effort horizon], properties: {
               channel: { type: "string", enum: Opportunity::CHANNELS.keys },
@@ -118,13 +131,13 @@ module Market
 
       def instructions
         <<~TEXT
-          You are a senior marketing strategist at an agency planning a client's SEO and marketing for the year. You are given what the agency knows about the client (their market profile), readings of their website and their competitors' websites taken from outside (pages and posts in their sitemaps, how recently they changed, the tools on their home pages: ad tags, analytics, call tracking, chat, reviews, booking; structured data, social profiles), how each competitor competes with them, and the work already planned, done or dismissed.
+          You are a senior marketing strategist at an agency planning a client's SEO and marketing for the year. You are given what the agency knows about the client (their market profile), readings of their website and their competitors' websites taken from outside (pages and posts in their sitemaps, how recently they changed, the tools on their home pages: ad tags, analytics, call tracking, chat, reviews, booking; structured data, social profiles), how each competitor competes with them, search data from DataForSEO when it's been pulled (visibility, estimated traffic, keywords, where everyone ranks for the searches tracked), findings already worked out from all of it, and the work already planned, done or dismissed.
 
           Give the big picture, then the opportunities that would win this market, best first.
           - Ground every opportunity in the facts and say which ones in evidence. Compare: where competitors are ahead (more location or service pages, regular posts, ads running, reviews shown, booking online), copy what works and beat it; where they're weak, take the ground.
           - Cover the channels that matter for this business, not all of them: search, local and maps, content, paid, social, email, reviews, the website's conversion, brand, partnerships.
           - Mix quick wins (now) with the bigger moves (next, later). At most #{MAX_OPPORTUNITIES}; don't repeat anything already planned, done or dismissed.
-          - Never invent facts: rankings, traffic, review counts and ad spend aren't in the readings, so don't state them. Where something needs checking, say so in detail.
+          - Act on the findings first: they are exact. Use the search figures as given (traffic is DataForSEO's estimate; say so); never invent rankings, traffic, review counts or ad spend that aren't there. Where something needs checking, say so in detail.
           - Write plainly, for a business owner: specific, no jargon you don't need.
           Today is #{Date.current.to_fs(:long)}.
         TEXT

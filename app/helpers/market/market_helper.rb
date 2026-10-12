@@ -22,6 +22,30 @@ module Market
     def market_impact_tag(opportunity) = market_level_tag(opportunity.impact, "#{opportunity.impact.capitalize} impact")
     def market_effort_tag(opportunity) = market_level_tag(opportunity.effort, "#{opportunity.effort.capitalize} effort", kind: :effort)
 
+    def market_severity_tag(finding)
+      tone = { "high" => "danger", "medium" => "medium", "low" => "low", "info" => "low" }.fetch(finding.severity)
+      tag.span finding.severity == "info" ? "Worth knowing" : "#{finding.severity.capitalize}", class: "market-level market-level--#{tone} txt-nowrap"
+    end
+
+    # A figure and how it moved since the pull before: "1,240 ↑12%".
+    def market_change(now, before)
+      return tag.span("–", class: "txt-subtle") if now.nil?
+
+      text = number_with_delimiter(now)
+      return text if before.nil? || before.to_i.zero? || now == before
+
+      change = ((now.to_f - before) * 100 / before).round
+      safe_join([ text, " ", tag.span("#{change.positive? ? "↑" : "↓"}#{change.abs}%", class: change.positive? ? "market-up" : "market-down") ])
+    end
+
+    # A tracked position and how it moved: "4 ↑2"; lower is better.
+    def market_position(now, before)
+      return tag.span("–", class: "txt-subtle", title: "Not in the top #{Market::Search::Api::RANKING_DEPTH}") if now.nil?
+      return now.to_s if before.nil? || before == now
+
+      safe_join([ now.to_s, " ", tag.span("#{now < before ? "↑" : "↓"}#{(before - now).abs}", class: now < before ? "market-up" : "market-down") ])
+    end
+
     def market_state_tag(opportunity)
       status_tag({ "open" => "Open", "planned" => "Planned", "done" => "Done", "dismissed" => "Dismissed" }.fetch(opportunity.state))
     end

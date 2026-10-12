@@ -4,7 +4,7 @@ module Market
   # Every page, as a person and as JSON for agents, with something on it.
   class PagesTest < ActionDispatch::IntegrationTest
     setup do
-      Setting.current.toggle_plugin!(:market, enabled: true)
+      ::Setting.current.toggle_plugin!(:market, enabled: true)
       @client = clients(:acme)
       @profile = Profile.for(@client).tap { it.revise(industry_name: "Plumbing", website: "https://acme.example", goals: "More calls") }
       @rival = Competitor.create!(name: "Rival Plumbing", website: "https://rival.example", industry: @profile.industry)
@@ -17,7 +17,7 @@ module Market
     end
 
     test "404 while the plugin is off" do
-      Setting.current.toggle_plugin!(:market, enabled: false)
+      ::Setting.current.toggle_plugin!(:market, enabled: false)
       get market_overview_path
       assert_response :not_found
     end

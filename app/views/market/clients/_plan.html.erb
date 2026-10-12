@@ -32,7 +32,8 @@
       <% end %>
 
       <% suggested = plan.new_competitor_suggestions %>
-      <% if manage && (plan.industry_suggestion_new? || suggested.any?) %>
+      <% keywords = plan.new_keyword_suggestions %>
+      <% if manage && (plan.industry_suggestion_new? || suggested.any? || keywords.any?) %>
         <div class="market-suggestions">
           <span class="txt-x-small txt-subtle">To check: suggestions, not facts</span>
           <% if plan.industry_suggestion_new? %>
@@ -52,6 +53,15 @@
                 <span class="txt-x-small txt-subtle"><%= [ suggestion["website"], suggestion["why"] ].compact.join(" · ") %></span>
               </div>
               <%= button_to "Add as a competitor", market_competitors_path, params: { competitor: { name: suggestion["name"], website: suggestion["website"], client_id: client.id, industry_id: profile.industry_id } }, class: "btn txt-small" %>
+            </div>
+          <% end %>
+          <% if keywords.any? %>
+            <div class="market-suggestion">
+              <div class="market-list__main">
+                <span class="font-weight-bold">Searches to track</span>
+                <span class="txt-x-small txt-subtle"><%= keywords.join(", ") %></span>
+              </div>
+              <%= button_to "Track them", market_client_keywords_path(client), params: { keyword: { keywords: keywords.join("\n"), source: "plan" } }, class: "btn txt-small" %>
             </div>
           <% end %>
         </div>

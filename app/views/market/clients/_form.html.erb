@@ -20,6 +20,12 @@
   </div>
   <p class="txt-x-small txt-subtle margin-none">Pick an industry or type a new one. The website is read to compare with competitors'.</p>
 
+  <label class="record-form__field">
+    <span class="record-form__label">Where their customers search from</span>
+    <%= form.text_field :search_location, class: "input full-width", autocomplete: "off", placeholder: "Grand Rapids,Michigan,United States" %>
+  </label>
+  <p class="txt-x-small txt-subtle margin-none">A DataForSEO location (city, region, country, comma-separated) for the searches tracked; blank uses the country in Settings › Market.</p>
+
   <% [ [ :service_area, "Where they serve", "Towns, regions or countries; online-only says so" ],
        [ :offerings, "What they sell", "Services and products, the ones that earn most first" ],
        [ :audience, "Who they serve", "Homeowners, contractors, enterprises in finance…" ],

@@ -363,6 +363,46 @@
     gap: var(--block-space-half);
   }
 
+  .market-finding {
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-space-half);
+    padding-block: var(--block-space);
+  }
+
+  .market-keyword-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--inline-space-half);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    > li {
+      background-color: var(--color-ink-lightest);
+      border-radius: 99em;
+      padding: 0.15em 0.65em;
+    }
+  }
+
+  .market-up {
+    color: oklch(var(--lch-green-dark));
+    font-size: var(--text-x-small);
+    font-weight: 600;
+  }
+
+  .market-down {
+    color: var(--color-negative);
+    font-size: var(--text-x-small);
+    font-weight: 600;
+  }
+
+  .market-check {
+    align-items: center;
+    flex-direction: row;
+    gap: var(--inline-space-half);
+  }
+
   .market-danger {
     color: var(--color-negative);
   }

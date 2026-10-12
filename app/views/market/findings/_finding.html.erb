@@ -1,0 +1,41 @@
+<%# locals: (finding:, show_client:, manage:) %>
+<%# One finding: how much it matters, what it says and the figures behind it; Dismiss or Open again; on a keyword gap, Track these. %>
+<li class="market-finding" id="finding_<%= finding.id %>">
+  <div class="market-opportunity__head">
+    <div class="market-list__main">
+      <span class="<%= class_names("font-weight-bold", "txt-subtle": finding.state != "open") %>"><%= finding.title %></span>
+      <span class="txt-x-small txt-subtle">
+        <% if show_client %><%= link_to finding.client.name, market_client_path(finding.client, anchor: "findings"), class: "txt-ink" %> · <% end %><%= [ finding.channel_label, "since #{l finding.first_seen_at.to_date, format: :short}" ].compact.join(" · ") %>
+      </span>
+    </div>
+    <div class="market-tags">
+      <%= market_severity_tag finding %>
+      <% unless finding.state == "open" %><%= status_tag finding.state.capitalize %><% end %>
+    </div>
+  </div>
+  <% if finding.detail.present? %>
+    <p class="txt-small margin-none market-text"><%= finding.detail %></p>
+  <% end %>
+  <% gap = finding.kind == "keyword_gap" ? Array(finding.evidence["keywords"]) : [] %>
+  <% if gap.any? %>
+    <ul class="market-keyword-chips txt-x-small">
+      <% gap.first(8).each_with_index do |row, index| %>
+        <%# herb:key index %>
+        <li><%= row["keyword"] %> <span class="txt-subtle"><%= row["volume"] %>/mo · their #<%= row["their_position"] %></span></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <div class="market-opportunity__actions txt-small">
+    <% if manage && gap.any? %>
+      <%= button_to market_client_keywords_path(finding.client), params: { keyword: { keywords: gap.first(10).map { it["keyword"] }.join("\n"), source: "gap" } }, class: "btn txt-small", form_class: "display-contents" do %>
+        <%= icon_tag "add" %> <span>Track these</span>
+      <% end %>
+    <% end %>
+    <% if finding.state == "open" %>
+      <%= button_to "Dismiss", market_finding_path(finding), method: :patch, params: { finding: { state: "dismissed" } }, class: "btn btn--plain txt-small", form_class: "display-contents" %>
+    <% elsif finding.state == "dismissed" %>
+      <span class="txt-x-small txt-subtle">Dismissed by <%= finding.dismissed_by_name %></span>
+      <%= button_to "Open again", market_finding_path(finding), method: :patch, params: { finding: { state: "open" } }, class: "btn btn--plain txt-small", form_class: "display-contents" %>
+    <% end %>
+  </div>
+</li>

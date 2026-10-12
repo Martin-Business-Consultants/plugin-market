@@ -6,7 +6,7 @@ module Market
     include ActiveJob::TestHelper
 
     setup do
-      Setting.current.toggle_plugin!(:market, enabled: true)
+      ::Setting.current.toggle_plugin!(:market, enabled: true)
       @client = clients(:acme)
       sign_in_as users(:sarah)
     end

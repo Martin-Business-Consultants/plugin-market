@@ -1,0 +1,30 @@
+<% @page_title = "#{@client.name} · Search pulls" %>
+<% content_for :header do %>
+  <%= parent_page @client.name, market_client_path(@client, anchor: "search") %>
+<% end %>
+<%= render "market/nav", current: :clients %>
+
+<section class="panel shadow txt-align-start market-card">
+  <h1 class="page-title"><%= @client.name %>'s search pulls</h1>
+  <% if @pulls.empty? %>
+    <p class="txt-small txt-subtle margin-none">None yet.</p>
+  <% end %>
+  <% @pulls.each do |pull| %>
+    <%# herb:key pull.id %>
+    <article class="market-plan">
+      <header class="market-card__header">
+        <h2 class="market-card__title"><%= l pull.created_at, format: :long %></h2>
+        <span class="txt-x-small txt-subtle"><%= pull.user&.display_name || "On its own" %> · <%= pull.working? ? "running" : pull.state %> · $<%= format("%.2f", pull.cost) %></span>
+      </header>
+      <% if pull.error.present? %><p class="txt-small market-danger margin-none"><%= pull.error %></p><% end %>
+      <% if Array(pull.notes).any? %>
+        <ul class="market-changes txt-small">
+          <% pull.notes.each_with_index do |note, index| %>
+            <%# herb:key index %>
+            <li><%= note %></li>
+          <% end %>
+        </ul>
+      <% end %>
+    </article>
+  <% end %>
+</section>

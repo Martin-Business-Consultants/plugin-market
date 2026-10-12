@@ -19,6 +19,7 @@ module Market
       @opportunities = Opportunity.by_priority(open).first(10)
       @changes = Snapshot.with_changes.where(subject_type: Competitor.polymorphic_name, taken_at: 30.days.ago..).latest_first.limit(12).includes(:subject).to_a
       @competitor_count = Competitor.count
+      @findings = Finding.open.where(client: Client.active).where(severity: %w[high medium]).includes(:client).by_severity.limit(8).to_a
     end
   end
 end

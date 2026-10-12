@@ -1,7 +1,7 @@
 module Market
   # Each client's market: the list of clients with what's known about theirs, and one client's
   # page (profile, competitors side by side, the plan and its opportunities).
-  class ProfilesController < ApplicationController
+  class ClientsController < ApplicationController
     SHOW = %w[active all gaps].freeze
 
     allow_staff only: %i[index show]
@@ -13,8 +13,8 @@ module Market
       description: "A client's market profile (industry, website, service area, offerings, audience, positioning, goals) and what's missing from it, their website's latest reading, each competitor with how it competes, its latest reading and recent changes, the latest plan (summary, positioning, suggestions) and the opportunities, best first.",
       next_tools: %i[update_client_market_profile create_competitor plan_market_with_ai plan_market_opportunity_as_work]
     agent_tool :update_client_market_profile, on: :update, title: "Change a client's market profile",
-      description: "Any of: industry_name (the industry, made if new; \"\" clears it), website, service_area, offerings, audience, positioning, goals, notes. A new website is read in the background.",
-      params: { profile: { industry_name: "string", website: "string", service_area: "text", offerings: "text", audience: "text", positioning: "text", goals: "text", notes: "text" } },
+      description: "Any of: industry_name (the industry, made if new; \"\" clears it), website, service_area, offerings, audience, positioning, goals, notes, search_location (where their customers search from, a DataForSEO location name: \"Grand Rapids,Michigan,United States\"; blank uses the country in Settings › Market). A new website is read in the background.",
+      params: { profile: { industry_name: "string", website: "string", service_area: "text", offerings: "text", audience: "text", positioning: "text", goals: "text", notes: "text", search_location: "string" } },
       next_tools: %i[show_client_market]
 
     before_action :set_client, only: %i[show edit update]
@@ -40,6 +40,8 @@ module Market
       @plan = @client.market_plans.latest_first.first
       @opportunities = Opportunity.by_priority(@client.market_opportunities.includes(:client, :todo).to_a)
       @others = Competitor.ordered.where.not(id: @rivalries.map(&:competitor_id)).pluck(:name, :id)
+      @findings = Finding.where(client: @client).open.by_severity.to_a
+      @search = Search::Overview.new(@client)
     end
 
     def edit
@@ -51,6 +53,7 @@ module Market
       was = @profile.domain
       if @profile.revise(profile_params)
         @profile.check_later if @profile.domain.present? && @profile.domain != was
+        Finding.refresh_later(@client)
         redirect_to market_client_path(@client), notice: "#{@client.name}'s market saved."
       else
         render :edit, status: :unprocessable_entity
@@ -58,7 +61,7 @@ module Market
     end
 
     private
-      def profile_params = params.expect(profile: %i[industry_name website service_area offerings audience positioning goals notes])
+      def profile_params = params.expect(profile: %i[industry_name website service_area offerings audience positioning goals notes search_location])
 
       def gap?(client)
         profile = @profiles[client.id]

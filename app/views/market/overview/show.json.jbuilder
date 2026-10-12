@@ -17,4 +17,7 @@ json.competitor_changes @changes do |snapshot|
   json.taken_at snapshot.taken_at
   json.changes snapshot.differences
 end
+json.top_findings @findings do |finding|
+  json.partial! "market/findings/finding", finding: finding
+end
 json.clients_without_industry @unprofiled.map { agent_ref(it) }

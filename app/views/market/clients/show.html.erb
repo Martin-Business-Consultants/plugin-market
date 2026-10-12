@@ -59,6 +59,26 @@
   </dl>
 </section>
 
+<section class="panel shadow txt-align-start market-card" id="findings">
+  <header class="market-card__header">
+    <h2 class="market-card__title">What the data says</h2>
+    <%= link_to "All, and resolved", market_findings_path(client_id: @client.id, state: "all"), class: "txt-link txt-small" %>
+  </header>
+  <% if @findings.any? %>
+    <ul class="market-list">
+      <% @findings.first(8).each do |finding| %>
+        <%# herb:key finding.id %>
+        <%= render "market/findings/finding", finding: finding, show_client: false, manage: manage %>
+      <% end %>
+    </ul>
+    <% if @findings.size > 8 %>
+      <%= link_to "#{@findings.size - 8} more", market_findings_path(client_id: @client.id), class: "txt-link txt-small" %>
+    <% end %>
+  <% else %>
+    <p class="txt-small txt-subtle margin-none">Nothing yet. Findings come from the profile, competitors, website readings and search data, worked out after each reading and pull.</p>
+  <% end %>
+</section>
+
 <section class="panel shadow txt-align-start market-card" id="competitors">
   <header class="market-card__header">
     <h2 class="market-card__title">Against the competition</h2>
@@ -167,5 +187,6 @@
   <% end %>
 </section>
 
-<%= render "market/profiles/plan", client: @client, profile: @profile, plan: @plan, manage: manage %>
-<%= render "market/profiles/opportunities", client: @client, opportunities: @opportunities, manage: manage %>
+<%= render "market/clients/searches/search", data: @search, manage: manage %>
+<%= render "market/clients/plan", client: @client, profile: @profile, plan: @plan, manage: manage %>
+<%= render "market/clients/opportunities", client: @client, opportunities: @opportunities, manage: manage %>

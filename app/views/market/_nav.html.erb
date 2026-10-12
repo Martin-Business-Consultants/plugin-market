@@ -7,6 +7,7 @@
 <% end %>
 <% section_nav "Market" do %>
   <%= section_nav_link "Overview", market_overview_path, icon: "home", current: current == :overview %>
+  <%= section_nav_link "Findings", market_findings_path, icon: "search", current: current == :findings %>
   <%= section_nav_link "Opportunities", market_opportunities_path, icon: "bolt", current: current == :opportunities %>
   <%= section_nav_link term(:client, count: 2), market_clients_path, icon: "everyone", current: current == :clients %>
   <%= section_nav_link "Industries", market_industries_path, icon: "grid", current: current == :industries %>

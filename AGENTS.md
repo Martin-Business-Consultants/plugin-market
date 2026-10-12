@@ -44,6 +44,25 @@ Read first, in Runwell's repository:
   strict schema: summary, positioning, an industry and competitors to check (suggestions, never
   recorded on their own), and `Opportunity`s, which are added unless one with the same title
   exists.
+- Search (DataForSEO): `Setting` (one row; the password `encrypts`, never rendered back) holds
+  the login, the monthly budget, the country and language, and the refresh. `Search::Client`
+  is the only thing that calls DataForSEO. It checks the budget against the `SearchRequest`
+  ledger with a ceiling before each call, records every call, retries what may pass
+  (`RETRY_CODES`, 429, 5xx, the network) up to 3 times with backoff, and raises `AuthError`,
+  `FundsError` and `BudgetError` (which stop a pull) or `InvalidError` and `UnavailableError`
+  (which skip a part). Its transport is injectable. `Search::Api` maps each endpoint to a
+  compact Hash. `SearchPull#run!` (in `SearchPullJob`) keeps each part as a `SearchSnapshot`
+  (overview, keywords, competitors, backlinks), skips fresh parts unless forced, checks each
+  `Keyword` into a `Ranking`, and never raises. `Search::Overview` is what the page and the
+  agents read.
+- `Finding` rows are what `Finding::Analysis` works out from the stored data, with no outside
+  calls. `Finding.refresh` upserts them by stable key, moves `changed_at` only on a change, and
+  resolves the ones that stop holding. It runs after every reading (`CheckJob`), every pull,
+  and profile or rivalry changes (`FindingsJob`), and nightly (`NightlyJob`).
+  `list_market_findings --since` is how a harness hears each change once.
+- A path `--id` is resolved from a name only when the controller is named for a core model
+  (`ClientsController` → Client), so client pages live there.
+- Inside `Market`, `Setting` is the plugin's own: the core's is `::Setting`.
 - `Opportunity`: channel, impact, effort, horizon, state (open, planned, done, dismissed).
   `by_priority` is the order everywhere. `plan_as_work` makes the core todo and links it.
   Staff may change only its state; anything else needs `manage_market`.

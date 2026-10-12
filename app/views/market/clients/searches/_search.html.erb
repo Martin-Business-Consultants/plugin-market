@@ -1,0 +1,151 @@
+<%# locals: (data:, manage:) %>
+<%# A client's search: visibility against each competitor, the searches tracked and who ranks where, and the sites that share their keywords; with the pull that refreshes it all (and reloads itself while it runs). %>
+<% setting = Market::Setting.current %>
+<% client = data.client %>
+<% pull = data.last_pull %>
+<turbo-frame id="market_search" target="_top">
+  <section class="panel shadow txt-align-start market-card" id="search">
+    <header class="market-card__header">
+      <h2 class="market-card__title">In search</h2>
+      <div class="market-tags">
+        <% if pull %>
+          <%= link_to market_client_search_pulls_path(client), class: "txt-link txt-x-small" do %>
+            <%= pull.working? ? "Pulling…" : "Pulled #{time_ago_in_words(pull.finished_at || pull.updated_at)} ago (#{pull.state}, $#{format("%.2f", pull.cost)})" %>
+          <% end %>
+        <% end %>
+        <% if manage && setting.search_connected? && data.profile&.domain && !pull&.working? %>
+          <%= button_to market_client_search_pulls_path(client), class: "btn txt-small", form_class: "display-contents",
+                title: "At most $#{format("%.2f", Market::SearchPull.ceiling_for(client, setting: setting))}; $#{format("%.2f", setting.remaining_budget)} left this month" do %>
+            <%= icon_tag "refresh" %> <span>Pull search data</span>
+          <% end %>
+        <% end %>
+      </div>
+    </header>
+
+    <% if pull&.working? %>
+      <div class="market-working txt-small" data-controller="poll" data-poll-interval-value="5">
+        <%= icon_tag "refresh" %>
+        <span>Pulling from DataForSEO: every site's visibility and keywords, then where everyone ranks for the tracked searches. A minute or two.</span>
+      </div>
+    <% elsif pull && pull.state.in?(%w[stopped failed partial]) %>
+      <p class="market-notice <%= "market-notice--negative" unless pull.state == "partial" %> txt-small margin-none" role="status">
+        The last pull <%= pull.state == "partial" ? "missed some parts" : pull.state %><%= ": #{pull.error}" if pull.error.present? %>.
+        <%= link_to "What happened", market_client_search_pulls_path(client), class: "txt-link" %>
+      </p>
+    <% end %>
+
+    <% if !setting.search_connected? %>
+      <p class="txt-small txt-subtle margin-none">
+        Search data comes from DataForSEO: visibility, estimated traffic, the keywords each site ranks for, and where everyone ranks for the searches you track.
+        <% if can?(:manage_settings) %><%= link_to "Connect it in Settings › Market", market_settings_path, class: "txt-link" %>.<% else %>An owner connects it in Settings › Market.<% end %>
+      </p>
+    <% elsif !data.profile&.domain %>
+      <p class="txt-small txt-subtle margin-none">Add <%= client.name %>'s website to their market profile to pull their search data.</p>
+    <% elsif !data.pulled? %>
+      <p class="txt-small txt-subtle margin-none">No search data yet. Pull it to see how visible <%= client.name %> is against each competitor.</p>
+    <% end %>
+
+    <% if data.pulled? %>
+      <% backlinks = data.sites.any?(&:backlinks) %>
+      <div class="market-table-wrap">
+        <table class="data-table market-compare">
+          <thead>
+            <tr>
+              <th>Site</th><th>Keywords</th><th>Traffic <span class="txt-subtle">(est./mo)</span></th><th>Top 3</th><th>Top 10</th><th>Paid keywords</th>
+              <% if backlinks %><th>Linking sites</th><% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% data.sites.each do |site| %>
+              <%# herb:key site.domain %>
+              <tr class="<%= class_names("market-compare__own": site.own) %>">
+                <td><strong><%= site.name %></strong><div class="txt-x-small txt-subtle"><%= site.domain %></div></td>
+                <% if site.pulled? %>
+                  <td><%= market_change site.figure("organic_keywords"), site.before("organic_keywords") %></td>
+                  <td><%= market_change site.figure("organic_traffic"), site.before("organic_traffic") %></td>
+                  <td><%= number_with_delimiter site.figure("top_3") %></td>
+                  <td><%= number_with_delimiter site.figure("top_10") %></td>
+                  <td><%= number_with_delimiter site.figure("paid_keywords") %></td>
+                  <% if backlinks %><td><%= site.backlinks ? number_with_delimiter(site.backlinks.data["referring_domains"]) : "–" %></td><% end %>
+                <% else %>
+                  <td colspan="<%= backlinks ? 6 : 5 %>" class="txt-small txt-subtle">Not pulled yet</td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <% tracked = data.tracked %>
+    <% shown = data.competitor_sites.first(4) %>
+    <h3 class="divider market-horizon">Searches tracked<%= " from #{data.profile.search_location}" if data.profile&.search_location %></h3>
+    <% if tracked.any? %>
+      <div class="market-table-wrap">
+        <table class="data-table market-compare">
+          <thead>
+            <tr>
+              <th>Search</th><th><%= client.name.truncate(18) %></th>
+              <% shown.each do |site| %>
+                <%# herb:key site.domain %>
+                <th title="<%= site.name %>"><%= site.name.truncate(14) %></th>
+              <% end %>
+              <th>On the page</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% tracked.each do |row| %>
+              <%# herb:key row[:keyword].id %>
+              <tr>
+                <td><%= row[:keyword].keyword %></td>
+                <td><%= row[:ranking] ? market_position(row[:position], row[:before]) : tag.span("Not checked yet", class: "txt-subtle txt-x-small") %></td>
+                <% shown.each do |site| %>
+                  <%# herb:key site.domain %>
+                  <td><%= row[:ranking] ? market_position(row[:competitors][site.domain], nil) : "" %></td>
+                <% end %>
+                <td class="txt-x-small txt-subtle"><%= Array(row[:ranking]&.features).map { it.humanize.downcase }.first(3).join(", ") %></td>
+                <td>
+                  <% if manage %>
+                    <%= button_to market_client_keyword_path(client, row[:keyword]), method: :delete, class: "btn btn--plain txt-small", form_class: "display-contents", title: "Stop tracking" do %>
+                      <%= icon_tag "close" %><span class="for-screen-reader">Stop tracking <%= row[:keyword].keyword %></span>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="txt-small txt-subtle margin-none">None yet. Track the searches <%= client.name %>'s customers make; each is checked from where they search on every pull.</p>
+    <% end %>
+    <% if manage %>
+      <details class="market-add">
+        <summary class="btn txt-small"><%= icon_tag "add" %> <span>Track searches</span></summary>
+        <%= form_with url: market_client_keywords_path(client), scope: :keyword, class: "record-form txt-small" do |form| %>
+          <%= form.text_area :keywords, rows: 3, class: "input full-width", placeholder: "One a line: emergency dentist grand rapids", required: true, aria: { label: "Searches to track" } %>
+          <div><button type="submit" class="btn btn--link txt-small">Track</button></div>
+        <% end %>
+      </details>
+    <% end %>
+
+    <% unwatched = data.unwatched.first(8) %>
+    <% if unwatched.any? %>
+      <h3 class="divider market-horizon">Also competing in search</h3>
+      <ul class="market-list">
+        <% unwatched.each do |row| %>
+          <%# herb:key row["domain"] %>
+          <li class="market-list__row">
+            <div class="market-list__main">
+              <span class="font-weight-bold"><%= row["domain"] %></span>
+              <span class="txt-x-small txt-subtle"><%= number_with_delimiter row["shared_keywords"] %> shared keywords · <%= number_with_delimiter row["organic_traffic"] %> visits a month (est.)</span>
+            </div>
+            <% if manage %>
+              <%= button_to "Watch", market_competitors_path, params: { competitor: { name: row["domain"], website: "https://#{row["domain"]}", client_id: client.id, industry_id: data.profile&.industry_id, kind: "direct" } }, class: "btn txt-small" %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+</turbo-frame>

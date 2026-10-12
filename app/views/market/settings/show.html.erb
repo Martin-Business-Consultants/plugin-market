@@ -1,0 +1,115 @@
+<% @page_title = "Market" %>
+<%= render "settings/header", current: :market %>
+
+<section class="settings">
+  <div class="settings__panel panel shadow txt-align-start">
+    <section class="settings__section flex flex-column gap">
+      <header><h2 class="divider">DataForSEO</h2></header>
+      <p class="txt-small txt-subtle margin-none">
+        Search data (visibility, estimated traffic, the keywords each site ranks for, who shares a client's keywords, and where everyone ranks for the searches you track) comes from your own
+        <%= link_to "DataForSEO", "https://dataforseo.com", class: "txt-link", target: "_blank", rel: "noopener" %> account: its API login and password (Dashboard › API Access), not your sign-in to their site.
+      </p>
+      <% if @setting.search_connected? %>
+        <p class="txt-small margin-none">
+          <%= status_tag "Active" %>
+          <% if @setting.balance %>$<%= format("%.2f", @setting.balance) %> on the account, <%= time_ago_in_words(@setting.checked_at) %> ago.<% else %>Saved; check it to see the balance.<% end %>
+        </p>
+      <% else %>
+        <p class="txt-small margin-none"><%= status_tag "Dormant" %> Not connected: add the API login and password.</p>
+      <% end %>
+      <% if @setting.last_error.present? %>
+        <p class="txt-small market-danger margin-none" role="alert"><%= @setting.last_error %></p>
+      <% end %>
+      <% if @setting.search_connected? && @setting.persisted? %>
+        <div>
+          <%= button_to market_settings_check_path, class: "btn txt-small", form_class: "display-contents" do %>
+            <%= icon_tag "refresh" %> <span>Check the connection</span>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+
+    <%= render "layouts/shared/errors", record: @setting %>
+    <%= form_with model: @setting, url: market_settings_path, method: :patch, scope: :setting, class: "record-form settings__section" do |form| %>
+      <div class="record-form__row">
+        <label class="record-form__field">
+          <span class="record-form__label">API login</span>
+          <%= form.text_field :dataforseo_login, class: "input full-width", autocomplete: "off", spellcheck: false %>
+        </label>
+        <label class="record-form__field">
+          <span class="record-form__label">API password</span>
+          <%# Never sent back to the page: blank keeps the saved one. %>
+          <%= form.password_field :dataforseo_password, value: nil, class: "input full-width", autocomplete: "new-password", spellcheck: false,
+                placeholder: (@setting.dataforseo_password.present? ? "Saved: leave blank to keep it" : nil), data: { "1p-ignore": true } %>
+        </label>
+      </div>
+
+      <header><h2 class="divider">Spending</h2></header>
+      <div class="record-form__row">
+        <label class="record-form__field">
+          <span class="record-form__label">Monthly budget (US dollars)</span>
+          <%= form.number_field :monthly_budget_dollars, value: format("%.2f", @setting.budget), min: 0, step: "0.01", class: "input full-width" %>
+        </label>
+        <div class="record-form__field">
+          <span class="record-form__label">This month</span>
+          <span class="txt-small">$<%= format("%.2f", @setting.spent_this_month) %> spent, $<%= format("%.2f", @setting.remaining_budget) %> left</span>
+        </div>
+      </div>
+      <p class="txt-x-small txt-subtle margin-none">Every request is checked against what's left first, and refused if it could go over: a pull stops where it is, keeping what it got.</p>
+
+      <header><h2 class="divider">Searches</h2></header>
+      <div class="record-form__row">
+        <label class="record-form__field">
+          <span class="record-form__label">Country</span>
+          <%= form.text_field :country, class: "input full-width", autocomplete: "off", placeholder: "United States" %>
+        </label>
+        <label class="record-form__field">
+          <span class="record-form__label">Language</span>
+          <%= form.text_field :language_code, class: "input full-width", autocomplete: "off", placeholder: "en" %>
+        </label>
+        <label class="record-form__field">
+          <span class="record-form__label">Keywords per site</span>
+          <%= form.number_field :keyword_limit, min: 10, max: 1000, class: "input full-width" %>
+        </label>
+      </div>
+      <p class="txt-x-small txt-subtle margin-none">Visibility and keywords are country-wide. Tracked searches are checked from each <%= term(:client).downcase %>'s search location (their market profile), or this country.</p>
+      <div class="record-form__row">
+        <label class="record-form__field">
+          <span class="record-form__label">Pull search data on its own</span>
+          <%= form.select :refresh, Market::Setting::REFRESH.invert, {}, class: "input input--select full-width" %>
+        </label>
+        <label class="record-form__field market-check">
+          <%= form.check_box :backlinks %>
+          <span>Backlinks too <span class="txt-subtle">(needs DataForSEO's Backlinks subscription)</span></span>
+        </label>
+      </div>
+
+      <div class="record-form__footer">
+        <button type="submit" class="btn btn--link"><span>Save</span></button>
+      </div>
+    <% end %>
+
+    <section class="settings__section flex flex-column gap-half">
+      <header><h2 class="divider">Latest requests</h2></header>
+      <% if @requests.any? %>
+        <table class="data-table txt-small">
+          <thead><tr><th>When</th><th>What</th><th>For</th><th>Cost</th><th>Result</th></tr></thead>
+          <tbody>
+            <% @requests.each do |request| %>
+              <%# herb:key request.id %>
+              <tr>
+                <td class="txt-nowrap"><%= time_ago_in_words(request.created_at) %> ago</td>
+                <td><%= request.endpoint.split("/").reject { it.in?(%w[live google regular]) }.last(2).join(" ").humanize %></td>
+                <td class="overflow-ellipsis"><%= request.target %></td>
+                <td>$<%= format("%.4f", request.cost) %></td>
+                <td class="<%= class_names("market-danger": !request.ok?) %>"><%= request.ok? ? "OK" : (request.error.presence || request.status_message) %><%= " (#{request.attempts} tries)" if request.attempts > 1 %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="txt-small txt-subtle margin-none">None yet.</p>
+      <% end %>
+    </section>
+  </div>
+</section>

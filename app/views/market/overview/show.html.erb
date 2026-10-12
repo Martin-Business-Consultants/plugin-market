@@ -20,6 +20,23 @@
   <% end %>
 </section>
 
+<section class="panel shadow txt-align-start market-card">
+  <header class="market-card__header">
+    <h2 class="market-card__title">What the data says</h2>
+    <%= link_to "All findings", market_findings_path, class: "txt-link txt-small" %>
+  </header>
+  <% if @findings.any? %>
+    <ul class="market-list">
+      <% @findings.each do |finding| %>
+        <%# herb:key finding.id %>
+        <%= render "market/findings/finding", finding: finding, show_client: true, manage: can?(:manage_market) %>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="txt-small txt-subtle margin-none">Nothing that needs you. Findings come from <%= term(:client, count: 2).downcase %>' profiles, competitors, website readings and search data.</p>
+  <% end %>
+</section>
+
 <div class="market-columns">
   <section class="panel shadow txt-align-start market-card">
     <header class="market-card__header">

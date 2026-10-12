@@ -11,6 +11,7 @@ module Market
       description: "It stays watched, for any other client and on its own."
 
     before_action :set_client
+    after_action -> { Finding.refresh_later(@client) }, if: -> { response.redirect? }
 
     def create
       rivalry = @client.market_rivalries.new(params.expect(rivalry: %i[competitor_id kind threat notes]))

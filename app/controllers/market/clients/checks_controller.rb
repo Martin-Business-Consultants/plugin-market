@@ -1,5 +1,5 @@
 module Market
-  module Profiles
+  module Clients
     # Reads a client's own website again now, in the background.
     class ChecksController < ApplicationController
       require_permission :manage_market

@@ -1,0 +1,30 @@
+<% @page_title = "Findings" %>
+<%= render "market/nav", current: :findings %>
+
+<% content_for :index_filters do %>
+  <%= render "layouts/shared/quick_filter", title: "Show…", param: :state, current: @state,
+        options: [ [ "Open", "open" ], [ "Dismissed", "dismissed" ], [ "Resolved", "resolved" ], [ "All", "all" ] ] %>
+  <%= render "layouts/shared/quick_filter", title: "How much…", param: :severity, current: params[:severity].to_s,
+        options: [ [ "Any", "" ] ] + Market::Finding::SEVERITIES.map { [ it.capitalize, it ] } %>
+  <% [ @client, @industry ].compact.each do |filter| %>
+    <%# herb:key filter.class.name %>
+    <%= link_to market_findings_path(request.query_parameters.except(filter.is_a?(Client) ? "client_id" : "industry_id")), class: "btn txt-small" do %>
+      <%= icon_tag "close" %> <span><%= filter.name %></span>
+    <% end %>
+  <% end %>
+<% end %>
+<%= render "layouts/shared/index_toolbar" %>
+
+<section class="panel shadow txt-align-start market-card">
+  <p class="txt-x-small txt-subtle margin-none">Worked out from the website readings, the search data and the tracked rankings, after each one and every night. For a harness: <code>runwell list_market_findings --since <%= @as_of.utc.iso8601 %></code> answers only what changes after now.</p>
+  <% if @findings.any? %>
+    <ul class="market-list">
+      <% @findings.each do |finding| %>
+        <%# herb:key finding.id %>
+        <%= render "market/findings/finding", finding: finding, show_client: @client.nil?, manage: can?(:manage_market) %>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="txt-small txt-subtle margin-none">Nothing here. Findings come from <%= term(:client, count: 2).downcase %>' market profiles, competitors, website readings and search data.</p>
+  <% end %>
+</section>

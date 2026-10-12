@@ -58,6 +58,7 @@ module Market
         if @client
           link = @competitor.rivalries.find_or_initialize_by(client: @client)
           link.update!(rivalry) if link.new_record? || rivalry.any?
+          Finding.refresh_later(@client)
           redirect_to market_client_path(@client), notice: existing ? "#{@competitor.name} was already watched: now one of #{@client.name}'s competitors." : "#{@competitor.name} added to #{@client.name}'s competitors; reading its website."
         else
           redirect_to market_competitor_path(@competitor), notice: existing ? "#{@competitor.name} is already watched." : "#{@competitor.name} added; reading its website."

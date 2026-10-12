@@ -11,6 +11,7 @@ module Market
     belongs_to :industry, optional: true
 
     normalizes :website, with: ->(url) { url.strip.chomp("/").presence }
+    normalizes :search_location, with: ->(location) { location.split(",").map(&:strip).compact_blank.join(",").presence }
 
     validates :client_id, uniqueness: true
     validates :website, format: { with: %r{\Ahttps?://\S+\z}, message: "must start with http:// or https://" }, allow_nil: true
