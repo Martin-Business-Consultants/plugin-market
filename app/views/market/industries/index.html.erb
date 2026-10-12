@@ -1,0 +1,32 @@
+<% @page_title = "Industries" %>
+<%= render "market/nav", current: :industries %>
+
+<%= render "layouts/shared/index_toolbar", new_text: (can?(:manage_market) ? "Add an industry" : nil),
+      new_path: (new_market_industry_path if can?(:manage_market)) %>
+
+<section class="panel shadow center index-table">
+  <table class="data-table">
+    <thead>
+      <tr><th>Industry</th><th>NAICS</th><th><%= term(:client, count: 2) %></th><th>Competitors</th><th>Open opportunities</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @industries.each do |industry| %>
+        <%# herb:key industry.id %>
+        <tr data-filter-target="item">
+          <td><%= link_to industry.name, market_industry_path(industry), class: "txt-ink font-weight-bold" %></td>
+          <td class="txt-small"><%= industry.naics_code ? industry.naics_code : tag.span("–", class: "txt-subtle") %></td>
+          <td class="txt-small"><%= @clients[industry.id].to_i %></td>
+          <td class="txt-small"><%= @competitors[industry.id].to_i %></td>
+          <td class="txt-small"><%= @open[industry.id].to_i %></td>
+          <%= render "layouts/shared/row_actions", name: industry.name,
+                edit_path: (edit_market_industry_path(industry) if can?(:manage_market)),
+                delete_path: (market_industry_path(industry) if can?(:manage_market)),
+                delete_message: "Its clients and competitors stay, with no industry." %>
+        </tr>
+      <% end %>
+      <% if @industries.empty? %>
+        <tr><td colspan="6" class="txt-subtle txt-small">No industries yet. Set one on a <%= term(:client).downcase %>'s market profile, or add one here.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

@@ -1,0 +1,13 @@
+<% @page_title = "Add a competitor" %>
+<% content_for :header do %>
+  <%= parent_page "Competitors", market_competitors_path %>
+<% end %>
+<%= render "market/nav", current: :competitors %>
+
+<section class="settings">
+  <div class="settings__panel panel shadow txt-align-start">
+    <h1 class="page-title"><%= @page_title %></h1>
+    <p class="txt-small txt-subtle">Its website is read straight away, then every week, and what changes is kept.</p>
+    <%= render "market/competitors/form", competitor: @competitor, client: @client %>
+  </div>
+</section>

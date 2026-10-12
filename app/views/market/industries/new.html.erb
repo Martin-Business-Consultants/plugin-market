@@ -1,0 +1,12 @@
+<% @page_title = "Add an industry" %>
+<% content_for :header do %>
+  <%= parent_page "Industries", market_industries_path %>
+<% end %>
+<%= render "market/nav", current: :industries %>
+
+<section class="settings">
+  <div class="settings__panel panel shadow txt-align-start">
+    <h1 class="page-title"><%= @page_title %></h1>
+    <%= render "market/industries/form", industry: @industry %>
+  </div>
+</section>

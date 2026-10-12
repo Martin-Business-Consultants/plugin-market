@@ -1,0 +1,53 @@
+<%# locals: (competitor:, client: nil) %>
+<%= render "layouts/shared/errors", record: competitor %>
+
+<%= form_with model: competitor, url: competitor.new_record? ? market_competitors_path : market_competitor_path(competitor), scope: :competitor, class: "record-form", data: { controller: "form", action: "keydown.esc->form#cancel" } do |form| %>
+  <div class="record-form__row">
+    <label class="record-form__field">
+      <span class="record-form__label">Name</span>
+      <%= form.text_field :name, class: "input full-width", autofocus: competitor.new_record?, autocomplete: "off", placeholder: "Acme Plumbing", required: true %>
+    </label>
+    <label class="record-form__field">
+      <span class="record-form__label">Website</span>
+      <%= form.url_field :website, class: "input full-width", autocomplete: "off", placeholder: "https://their-site.com" %>
+    </label>
+  </div>
+  <label class="record-form__field">
+    <span class="record-form__label">Industry</span>
+    <%= form.select :industry_id, market_industry_options, { include_blank: "None" }, class: "input input--select full-width" %>
+  </label>
+  <% if competitor.new_record? %>
+    <div class="record-form__row">
+      <label class="record-form__field">
+        <span class="record-form__label">Against</span>
+        <%= form.select :client_id, market_client_options, { include_blank: "No one yet", selected: client&.id }, class: "input input--select full-width" %>
+      </label>
+      <label class="record-form__field">
+        <span class="record-form__label">How</span>
+        <%= form.select :kind, Market::Rivalry::KINDS.invert, {}, class: "input input--select full-width" %>
+      </label>
+      <label class="record-form__field">
+        <span class="record-form__label">Threat</span>
+        <%= form.select :threat, Market::Rivalry::THREATS.map { [ it.capitalize, it ] }, { selected: "medium" }, class: "input input--select full-width" %>
+      </label>
+    </div>
+  <% end %>
+  <label class="record-form__field">
+    <span class="record-form__label">What they do well</span>
+    <%= form.text_area :strengths, rows: 2, class: "input full-width", placeholder: "Reviews everywhere, same-day service, a page for every town" %>
+  </label>
+  <label class="record-form__field">
+    <span class="record-form__label">Where they're weak</span>
+    <%= form.text_area :weaknesses, rows: 2, class: "input full-width", placeholder: "Slow site, no prices, nothing posted in a year" %>
+  </label>
+  <label class="record-form__field">
+    <span class="record-form__label">Notes</span>
+    <%= form.text_area :notes, rows: 2, class: "input full-width" %>
+  </label>
+  <div class="record-form__footer">
+    <%= link_to "Cancel", competitor.new_record? ? (client ? market_client_path(client) : market_competitors_path) : market_competitor_path(competitor), class: "btn btn--plain record-form__cancel", data: { form_target: "cancel" } %>
+    <button type="submit" class="btn btn--link" data-form-target="submit">
+      <span><%= competitor.new_record? ? "Add competitor" : "Save changes" %></span>
+    </button>
+  </div>
+<% end %>

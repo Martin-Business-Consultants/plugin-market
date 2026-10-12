@@ -1,0 +1,48 @@
+<% @page_title = term(:client, count: 2) %>
+<%= render "market/nav", current: :clients %>
+
+<% content_for :index_filters do %>
+  <%= render "layouts/shared/quick_filter", title: "Show…", param: :show, current: @show,
+        options: [ [ "Active", "active" ], [ "Gaps to fill", "gaps" ], [ "All", "all" ] ] %>
+  <% if @industry %>
+    <%= link_to market_clients_path(show: @show), class: "btn txt-small" do %>
+      <%= icon_tag "close" %> <span><%= @industry.name %></span>
+    <% end %>
+  <% end %>
+<% end %>
+<%= render "layouts/shared/index_toolbar" %>
+
+<section class="panel shadow center index-table">
+  <table class="data-table">
+    <thead>
+      <tr><th><%= term(:client) %></th><th>Industry</th><th>Website</th><th>Competitors</th><th>Open</th><th>Planned</th></tr>
+    </thead>
+    <tbody>
+      <% @clients.each do |client| %>
+        <%# herb:key client.id %>
+        <% profile = @profiles[client.id] %>
+        <tr data-filter-target="item">
+          <td><%= link_to client.name, market_client_path(client), class: "txt-ink font-weight-bold" %></td>
+          <td class="txt-small">
+            <% if profile&.industry %>
+              <%= link_to profile.industry.name, market_industry_path(profile.industry), class: "txt-ink" %>
+            <% else %>
+              <span class="txt-subtle">Not set</span>
+            <% end %>
+          </td>
+          <td class="txt-small"><%= profile&.domain ? profile.domain : tag.span("–", class: "txt-subtle") %></td>
+          <td class="txt-small"><%= @rivals[client.id].to_i %></td>
+          <td class="txt-small"><%= @open[client.id].to_i %></td>
+          <td class="txt-small"><%= @planned_at[client.id] ? "#{time_ago_in_words(@planned_at[client.id])} ago" : tag.span("Never", class: "txt-subtle") %></td>
+        </tr>
+      <% end %>
+      <% if @clients.empty? %>
+        <tr>
+          <td colspan="6" class="txt-subtle txt-small">
+            <%= @show == "gaps" ? "Every #{term(:client).downcase} has a profile, an industry and competitors." : "No #{term(:client, count: 2).downcase} here." %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

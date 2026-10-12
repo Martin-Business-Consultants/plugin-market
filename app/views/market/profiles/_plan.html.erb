@@ -1,0 +1,61 @@
+<%# locals: (client:, profile:, plan:, manage:) %>
+<%# The latest plan: drafting (reloading itself), failed, or its big picture with what it suggests checking. %>
+<turbo-frame id="market_plan" target="_top">
+  <section class="panel shadow txt-align-start market-card" id="plan">
+    <header class="market-card__header">
+      <h2 class="market-card__title">The big picture</h2>
+      <% if plan %>
+        <%= link_to market_client_plans_path(client), class: "txt-link txt-small" do %>
+          <%= plan.ready? ? "Drafted #{time_ago_in_words(plan.finished_at || plan.updated_at)} ago by #{plan.user.display_name}" : "Earlier plans" %>
+        <% end %>
+      <% end %>
+    </header>
+
+    <% if plan.nil? %>
+      <p class="txt-small txt-subtle margin-none">
+        No plan yet. <% if Market::Plan.ai_available_for?(client) %>Plan with AI drafts the state of <%= client.name %>'s market, the angle to win it and the opportunities, best first, from their profile, their website and their competitors'. The more of those there are, the better it is.<% else %>Plans are drafted by the AI plugin: switched on, set up and within its budget. Opportunities can be added by hand below.<% end %>
+      </p>
+    <% elsif plan.working? %>
+      <div class="market-working txt-small" data-controller="poll" data-poll-interval-value="4">
+        <%= icon_tag "refresh" %>
+        <span>Drafting <%= client.name %>'s plan from their profile, websites and competitors. A minute or so.</span>
+      </div>
+    <% elsif plan.failed? %>
+      <p class="market-notice market-notice--negative txt-small margin-none" role="alert">The plan didn't finish: <%= plan.error.presence || "it stopped answering" %>.</p>
+    <% else %>
+      <div class="market-text market-summary"><%= plan.summary %></div>
+      <% if plan.positioning %>
+        <div class="market-angle">
+          <span class="txt-x-small txt-subtle">The angle to win on</span>
+          <p class="margin-none font-weight-bold"><%= plan.positioning %></p>
+        </div>
+      <% end %>
+
+      <% suggested = plan.new_competitor_suggestions %>
+      <% if manage && (plan.industry_suggestion_new? || suggested.any?) %>
+        <div class="market-suggestions">
+          <span class="txt-x-small txt-subtle">To check: suggestions, not facts</span>
+          <% if plan.industry_suggestion_new? %>
+            <div class="market-suggestion">
+              <div class="market-list__main">
+                <span class="font-weight-bold">Industry: <%= plan.industry_suggestion["name"] %><%= " (NAICS #{plan.industry_suggestion["naics_code"]})" if plan.industry_suggestion["naics_code"].present? %></span>
+                <span class="txt-x-small txt-subtle"><%= plan.industry_suggestion["why"] %></span>
+              </div>
+              <%= button_to "Use it", market_client_path(client), method: :patch, params: { profile: { industry_name: plan.industry_suggestion["name"] } }, class: "btn txt-small" %>
+            </div>
+          <% end %>
+          <% suggested.each_with_index do |suggestion, index| %>
+            <%# herb:key index %>
+            <div class="market-suggestion">
+              <div class="market-list__main">
+                <span class="font-weight-bold"><%= suggestion["name"] %></span>
+                <span class="txt-x-small txt-subtle"><%= [ suggestion["website"], suggestion["why"] ].compact.join(" · ") %></span>
+              </div>
+              <%= button_to "Add as a competitor", market_competitors_path, params: { competitor: { name: suggestion["name"], website: suggestion["website"], client_id: client.id, industry_id: profile.industry_id } }, class: "btn txt-small" %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+</turbo-frame>

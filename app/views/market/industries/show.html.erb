@@ -1,0 +1,100 @@
+<% @page_title = @industry.name %>
+<% content_for :header do %>
+  <%= parent_page "Industries", market_industries_path %>
+<% end %>
+<%= render "market/nav", current: :industries %>
+
+<section class="panel shadow txt-align-start market-card">
+  <div class="page-heading">
+    <h1 class="page-title"><%= @industry.name %></h1>
+    <div class="page-heading__actions">
+      <%= link_to market_opportunities_path(industry_id: @industry.id), class: "btn btn--circle-mobile" do %>
+        <%= icon_tag "bolt" %> <span>Opportunities</span>
+      <% end %>
+      <% if can?(:manage_market) %>
+        <%= link_to edit_market_industry_path(@industry), class: "btn btn--circle-mobile", data: { keys: "e" } do %>
+          <%= icon_tag "pencil" %> <span>Edit</span> <kbd class="hide-on-touch">E</kbd>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+  <% if @industry.naics_code %>
+    <div class="record-meta txt-small"><span>NAICS <%= @industry.naics_code %></span></div>
+  <% end %>
+  <% if @industry.description.present? || @industry.notes.present? %>
+    <dl class="record-facts txt-small">
+      <% if @industry.description.present? %><dt>What it covers</dt><dd class="market-text"><%= @industry.description %></dd><% end %>
+      <% if @industry.notes.present? %><dt>What works in it</dt><dd class="market-text"><%= @industry.notes %></dd><% end %>
+    </dl>
+  <% end %>
+</section>
+
+<div class="market-columns">
+  <section class="panel shadow txt-align-start market-card">
+    <header class="market-card__header"><h2 class="market-card__title"><%= term(:client, count: 2) %></h2></header>
+    <% if @clients.any? %>
+      <ul class="market-list">
+        <% @clients.each do |client| %>
+          <%# herb:key client.id %>
+          <li class="market-list__row">
+            <%= link_to client.name, market_client_path(client), class: "txt-ink font-weight-bold" %>
+            <span class="txt-x-small txt-subtle txt-nowrap"><%= pluralize(@rivals[client.id].to_i, "competitor") %> · <%= @open[client.id].to_i %> open</span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="txt-small txt-subtle margin-none">None yet: set this industry on a <%= term(:client).downcase %>'s market profile.</p>
+    <% end %>
+  </section>
+
+  <section class="panel shadow txt-align-start market-card">
+    <header class="market-card__header">
+      <h2 class="market-card__title">Open, by channel</h2>
+      <span class="txt-x-small txt-subtle">Across its <%= term(:client, count: 2).downcase %></span>
+    </header>
+    <% if @channels.any? %>
+      <ul class="market-list">
+        <% @channels.each do |channel, opportunities| %>
+          <%# herb:key channel %>
+          <li class="market-list__row market-list__row--stacked">
+            <div class="market-list__main">
+              <%= link_to Market::Opportunity::CHANNELS.fetch(channel), market_opportunities_path(industry_id: @industry.id, channel: channel), class: "txt-ink font-weight-bold" %>
+              <span class="txt-x-small txt-subtle"><%= pluralize(opportunities.size, "opportunity") %></span>
+            </div>
+            <ul class="market-changes txt-small">
+              <% Market::Opportunity.by_priority(opportunities).first(3).each do |opportunity| %>
+                <%# herb:key opportunity.id %>
+                <li><%= opportunity.title %> <span class="txt-subtle">· <%= opportunity.client.name %></span></li>
+              <% end %>
+            </ul>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="txt-small txt-subtle margin-none">Nothing open yet.</p>
+    <% end %>
+  </section>
+</div>
+
+<section class="panel shadow txt-align-start market-card">
+  <header class="market-card__header">
+    <h2 class="market-card__title">Competitors in <%= @industry.name %></h2>
+    <% if can?(:manage_market) %><%= link_to "Add one", new_market_competitor_path(industry_id: @industry.id), class: "btn txt-small" %><% end %>
+  </header>
+  <% if @competitors.any? %>
+    <ul class="market-list">
+      <% @competitors.each do |competitor| %>
+        <%# herb:key competitor.id %>
+        <li class="market-list__row market-list__row--stacked">
+          <div class="market-list__main">
+            <%= link_to competitor.name, market_competitor_path(competitor), class: "txt-ink font-weight-bold" %>
+            <span class="txt-x-small txt-subtle"><%= [ competitor.host, ("against #{competitor.clients.map(&:name).to_sentence}" if competitor.clients.any?) ].compact.join(" · ") %></span>
+          </div>
+          <span class="txt-small"><%= market_reading_line @readings[competitor.id] %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="txt-small txt-subtle margin-none">None yet.</p>
+  <% end %>
+</section>

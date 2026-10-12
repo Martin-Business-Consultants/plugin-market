@@ -1,0 +1,31 @@
+<%# locals: (client:) %>
+<%# A tab on each client page (the :client_panel slot): their market at a glance, and the way to it. Its first heading is hidden: the tab names it. %>
+<% profile = client.market_profile %>
+<% rivalries = client.market_rivalries.includes(:competitor).by_threat.to_a %>
+<% open = Market::Opportunity.by_priority(client.market_opportunities.open.to_a) %>
+<section class="settings__section flex flex-column gap-half">
+  <h2 class="divider">Market</h2>
+  <dl class="record-facts txt-small">
+    <dt>Industry</dt>
+    <dd><%= profile&.industry ? link_to(profile.industry.name, market_industry_path(profile.industry), class: "txt-link") : tag.span("Not set", class: "txt-subtle") %></dd>
+    <dt>Competitors</dt>
+    <dd><%= rivalries.any? ? rivalries.first(5).map { it.competitor.name }.join(", ") + (rivalries.size > 5 ? " and #{rivalries.size - 5} more" : "") : tag.span("None yet", class: "txt-subtle") %></dd>
+    <dt>Open opportunities</dt>
+    <dd>
+      <% if open.any? %>
+        <ul class="market-plain-list">
+          <% open.first(3).each do |opportunity| %>
+            <%# herb:key opportunity.id %>
+            <li><%= opportunity.title %> <span class="txt-x-small txt-subtle">· <%= opportunity.channel_label %></span></li>
+          <% end %>
+        </ul>
+        <% if open.size > 3 %><span class="txt-x-small txt-subtle">and <%= open.size - 3 %> more</span><% end %>
+      <% else %>
+        <span class="txt-subtle">None</span>
+      <% end %>
+    </dd>
+  </dl>
+  <div>
+    <%= link_to "Open #{client.name}'s market", market_client_path(client), class: "btn txt-small" %>
+  </div>
+</section>

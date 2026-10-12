@@ -1,0 +1,57 @@
+<%# locals: (client:, opportunities:, manage:) %>
+<%# A client's opportunities: what's open or planned by when, best first in each, then what's done or dismissed. %>
+<% active, closed = opportunities.partition(&:active?) %>
+<% engagements = client.engagements.open.order(created_at: :desc).to_a %>
+<% people = User.active.people.ordered.to_a %>
+<section class="panel shadow txt-align-start market-card" id="opportunities">
+  <header class="market-card__header">
+    <h2 class="market-card__title">Opportunities</h2>
+    <span class="txt-x-small txt-subtle">Most impact for least effort first</span>
+  </header>
+
+  <% if active.empty? %>
+    <p class="txt-small txt-subtle margin-none">None open. Plan with AI, or add one.</p>
+  <% end %>
+  <% Market::Opportunity::HORIZONS.each do |horizon, label| %>
+    <%# herb:key horizon %>
+    <% rows = active.select { it.horizon == horizon } %>
+    <% next if rows.empty? %>
+    <h3 class="divider market-horizon"><%= label %></h3>
+    <ul class="market-list">
+      <% rows.each do |opportunity| %>
+        <%# herb:key opportunity.id %>
+        <%= render "market/opportunities/opportunity", opportunity: opportunity, engagements: engagements, people: people, manage: manage, show_client: false %>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% if closed.any? %>
+    <details class="market-closed">
+      <summary class="txt-small">Done and dismissed (<%= closed.size %>)</summary>
+      <ul class="market-list">
+        <% closed.each do |opportunity| %>
+          <%# herb:key opportunity.id %>
+          <%= render "market/opportunities/opportunity", opportunity: opportunity, engagements: engagements, people: people, manage: manage, show_client: false %>
+        <% end %>
+      </ul>
+    </details>
+  <% end %>
+
+  <% if manage %>
+    <details class="market-add">
+      <summary class="btn txt-small"><%= icon_tag "add" %> <span>Add an opportunity</span></summary>
+      <%= form_with url: market_client_opportunities_path(client), scope: :opportunity, class: "record-form txt-small" do |form| %>
+        <%= form.text_field :title, class: "input full-width", placeholder: "What to do", required: true, autocomplete: "off", aria: { label: "What to do" } %>
+        <%= form.text_area :detail, rows: 2, class: "input full-width", placeholder: "How", aria: { label: "How" } %>
+        <%= form.text_field :evidence, class: "input full-width", placeholder: "Why it's worth it", autocomplete: "off", aria: { label: "Why it's worth it" } %>
+        <div class="market-add__form">
+          <%= form.select :channel, Market::Opportunity::CHANNELS.invert, {}, class: "input input--select", aria: { label: "Channel" } %>
+          <%= form.select :impact, Market::Opportunity::IMPACTS.map { [ "#{it.capitalize} impact", it ] }, { selected: "medium" }, class: "input input--select", aria: { label: "Impact" } %>
+          <%= form.select :effort, Market::Opportunity::EFFORTS.map { [ "#{it.capitalize} effort", it ] }, { selected: "medium" }, class: "input input--select", aria: { label: "Effort" } %>
+          <%= form.select :horizon, Market::Opportunity::HORIZONS.invert, { selected: "next" }, class: "input input--select", aria: { label: "When" } %>
+          <button type="submit" class="btn btn--link txt-small">Add</button>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+</section>

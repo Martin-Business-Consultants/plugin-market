@@ -1,0 +1,62 @@
+<%# locals: (opportunity:, engagements:, people:, manage:, show_client:) %>
+<%# One opportunity: what, why and how big; then Plan as work (a todo on an open engagement), Done and Dismiss, or Open again. engagements: its client's open ones; people: who can lead work (both loaded once a page). %>
+<li class="market-opportunity" id="opportunity_<%= opportunity.id %>">
+  <div class="market-opportunity__head">
+    <div class="market-list__main">
+      <span class="<%= class_names("font-weight-bold", "txt-subtle": !opportunity.active?) %>"><%= opportunity.title %></span>
+      <span class="txt-x-small txt-subtle">
+        <% if show_client %><%= link_to opportunity.client.name, market_client_path(opportunity.client, anchor: "opportunity_#{opportunity.id}"), class: "txt-ink" %> · <% end %><%= opportunity.channel_label %> · <%= opportunity.horizon_label %>
+      </span>
+    </div>
+    <div class="market-tags">
+      <%= market_impact_tag opportunity %>
+      <%= market_effort_tag opportunity %>
+      <% unless opportunity.state == "open" %><%= market_state_tag opportunity %><% end %>
+    </div>
+  </div>
+  <% if opportunity.detail || opportunity.evidence %>
+    <div class="market-opportunity__body txt-small">
+      <% if opportunity.detail %><p class="margin-none market-text"><%= opportunity.detail %></p><% end %>
+      <% if opportunity.evidence %><p class="margin-none txt-subtle market-text">Why: <%= opportunity.evidence %></p><% end %>
+    </div>
+  <% end %>
+  <div class="market-opportunity__actions txt-small">
+    <% if opportunity.todo %>
+      <%= link_to todo_path(opportunity.todo), class: "txt-link" do %>
+        <%= icon_tag "board" %> <%= opportunity.todo.title %>
+      <% end %>
+    <% end %>
+    <% if opportunity.active? %>
+      <% if opportunity.state == "open" %>
+        <% if engagements.any? %>
+          <details class="market-menu">
+            <summary class="btn txt-small"><%= icon_tag "board" %> <span>Plan as <%= term(:work).downcase %></span></summary>
+            <div class="market-menu__panel">
+              <%= form_with url: market_opportunity_todo_path(opportunity), scope: :todo, class: "flex flex-column gap-half" do |form| %>
+                <%= form.select :engagement_id, engagements.map { [ "#{it.ref} · #{it.title}", it.id ] }, {}, class: "input input--select", aria: { label: term(:engagement) } %>
+                <%= form.text_field :title, value: opportunity.title, class: "input", required: true, aria: { label: "What needs doing" } %>
+                <%= form.select :owner_id, people.map { [ it.display_name, it.id ] }, { include_blank: "Unassigned", selected: Current.user.person.id }, class: "input input--select", aria: { label: "Lead" } %>
+                <%= date_input form, :due_on, class: "input", aria: { label: "Due" } %>
+                <button type="submit" class="btn btn--link txt-small">Add <%= term(:work).downcase %></button>
+              <% end %>
+            </div>
+          </details>
+        <% end %>
+      <% end %>
+      <%= button_to market_opportunity_path(opportunity), method: :patch, params: { opportunity: { state: "done" } }, class: "btn txt-small", form_class: "display-contents" do %>
+        <%= icon_tag "check" %> <span>Done</span>
+      <% end %>
+      <%= button_to market_opportunity_path(opportunity), method: :patch, params: { opportunity: { state: "dismissed" } }, class: "btn btn--plain txt-small", form_class: "display-contents" do %>
+        <span>Dismiss</span>
+      <% end %>
+    <% else %>
+      <span class="txt-x-small txt-subtle"><%= opportunity.state.capitalize %> by <%= opportunity.decided_by_name %><%= ", #{l opportunity.decided_at.to_date, format: :short}" if opportunity.decided_at %></span>
+      <%= button_to "Open again", market_opportunity_path(opportunity), method: :patch, params: { opportunity: { state: "open" } }, class: "btn btn--plain txt-small", form_class: "display-contents" %>
+    <% end %>
+    <% if manage %>
+      <%= button_to market_opportunity_path(opportunity), method: :delete, class: "btn btn--plain txt-small", form_class: "display-contents", title: "Delete", data: { turbo_confirm: "Delete “#{opportunity.title}”?" } do %>
+        <%= icon_tag "trash" %><span class="for-screen-reader">Delete</span>
+      <% end %>
+    <% end %>
+  </div>
+</li>

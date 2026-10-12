@@ -1,0 +1,55 @@
+<% @page_title = "Competitors" %>
+<%= render "market/nav", current: :competitors %>
+
+<% content_for :index_filters do %>
+  <%= form_with url: market_competitors_path, method: :get, class: "flex gap-half" do |form| %>
+    <%= form.hidden_field :industry_id, value: @industry&.id %>
+    <%= form.hidden_field :client_id, value: @client&.id %>
+    <%= form.search_field :q, value: @q, class: "input txt-small", placeholder: "Name or website…", aria: { label: "Search competitors" } %>
+  <% end %>
+  <% [ @client, @industry ].compact.each do |filter| %>
+    <%# herb:key filter.class.name %>
+    <%= link_to market_competitors_path(request.query_parameters.except(filter.is_a?(Client) ? "client_id" : "industry_id")), class: "btn txt-small" do %>
+      <%= icon_tag "close" %> <span><%= filter.name %></span>
+    <% end %>
+  <% end %>
+<% end %>
+<%= render "layouts/shared/index_toolbar", new_text: (can?(:manage_market) ? "Add a competitor" : nil),
+      new_path: (new_market_competitor_path(industry_id: @industry&.id, client_id: @client&.id) if can?(:manage_market)) %>
+
+<section class="panel shadow center index-table">
+  <table class="data-table">
+    <thead>
+      <tr><th>Competitor</th><th>Industry</th><th>Against</th><th>Latest reading</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @competitors.each do |competitor| %>
+        <%# herb:key competitor.id %>
+        <% reading = @readings[competitor.id] %>
+        <tr data-filter-target="item">
+          <td>
+            <%= link_to market_competitor_path(competitor), class: "txt-ink" do %>
+              <strong><%= competitor.name %></strong>
+              <div class="txt-x-small txt-subtle overflow-ellipsis"><%= competitor.host %></div>
+            <% end %>
+          </td>
+          <td class="txt-small"><%= competitor.industry ? link_to(competitor.industry.name, market_industry_path(competitor.industry), class: "txt-ink") : tag.span("–", class: "txt-subtle") %></td>
+          <td class="txt-small"><%= competitor.clients.any? ? safe_join(competitor.clients.map { link_to(it.name, market_client_path(it), class: "txt-ink") }, ", ") : tag.span("No one yet", class: "txt-subtle") %></td>
+          <td class="txt-small">
+            <%= market_reading_line reading %>
+            <% if reading&.differences.present? %>
+              <div class="txt-x-small market-changed"><%= pluralize(reading.differences.size, "change") %> <%= time_ago_in_words(reading.taken_at) %> ago</div>
+            <% end %>
+          </td>
+          <%= render "layouts/shared/row_actions", name: competitor.name,
+                edit_path: (edit_market_competitor_path(competitor) if can?(:manage_market)),
+                delete_path: (market_competitor_path(competitor) if can?(:manage_market)),
+                delete_message: "Stops watching it for every #{term(:client).downcase} and forgets its readings." %>
+        </tr>
+      <% end %>
+      <% if @competitors.empty? %>
+        <tr><td colspan="5" class="txt-subtle txt-small">No competitors<%= " match" if @q || @client || @industry %>. Add them from a <%= term(:client).downcase %>'s market page, so each is watched against them.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

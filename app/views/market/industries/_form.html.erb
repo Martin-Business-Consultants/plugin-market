@@ -1,0 +1,29 @@
+<%# locals: (industry:) %>
+<%= render "layouts/shared/errors", record: industry %>
+
+<%= form_with model: industry, url: industry.new_record? ? market_industries_path : market_industry_path(industry), scope: :industry, class: "record-form", data: { controller: "form", action: "keydown.esc->form#cancel" } do |form| %>
+  <div class="record-form__row">
+    <label class="record-form__field">
+      <span class="record-form__label">Name</span>
+      <%= form.text_field :name, class: "input full-width", autofocus: industry.new_record?, autocomplete: "off", placeholder: "Residential plumbing", required: true %>
+    </label>
+    <label class="record-form__field">
+      <span class="record-form__label">NAICS code</span>
+      <%= form.text_field :naics_code, class: "input full-width", autocomplete: "off", inputmode: "numeric", placeholder: "238220" %>
+    </label>
+  </div>
+  <label class="record-form__field">
+    <span class="record-form__label">What it covers</span>
+    <%= form.text_area :description, rows: 2, class: "input full-width", placeholder: "Who's in it, and who isn't" %>
+  </label>
+  <label class="record-form__field">
+    <span class="record-form__label">What works in it</span>
+    <%= form.text_area :notes, rows: 4, class: "input full-width", placeholder: "Seasons, what buyers search, the channels that pay, what competitors always do" %>
+  </label>
+  <div class="record-form__footer">
+    <%= link_to "Cancel", industry.new_record? ? market_industries_path : market_industry_path(industry), class: "btn btn--plain record-form__cancel", data: { form_target: "cancel" } %>
+    <button type="submit" class="btn btn--link" data-form-target="submit">
+      <span><%= industry.new_record? ? "Add industry" : "Save changes" %></span>
+    </button>
+  </div>
+<% end %>

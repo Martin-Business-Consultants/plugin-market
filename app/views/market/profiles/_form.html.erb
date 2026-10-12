@@ -1,0 +1,42 @@
+<%# locals: (profile:) %>
+<%= render "layouts/shared/errors", record: profile %>
+
+<%= form_with model: profile, url: market_client_path(profile.client), method: :patch, scope: :profile, class: "record-form", data: { controller: "form", action: "keydown.esc->form#cancel" } do |form| %>
+  <div class="record-form__row">
+    <label class="record-form__field">
+      <span class="record-form__label">Industry</span>
+      <%= form.text_field :industry_name, value: profile.industry&.name, list: "market_industries", class: "input full-width", autocomplete: "off", placeholder: "Residential plumbing" %>
+      <datalist id="market_industries">
+        <% market_industry_options.each do |name, id| %>
+          <%# herb:key id %>
+          <option value="<%= name %>"></option>
+        <% end %>
+      </datalist>
+    </label>
+    <label class="record-form__field">
+      <span class="record-form__label">Website</span>
+      <%= form.url_field :website, class: "input full-width", autocomplete: "off", placeholder: "https://example.com" %>
+    </label>
+  </div>
+  <p class="txt-x-small txt-subtle margin-none">Pick an industry or type a new one. The website is read to compare with competitors'.</p>
+
+  <% [ [ :service_area, "Where they serve", "Towns, regions or countries; online-only says so" ],
+       [ :offerings, "What they sell", "Services and products, the ones that earn most first" ],
+       [ :audience, "Who they serve", "Homeowners, contractors, enterprises in finance…" ],
+       [ :positioning, "How they want to be seen", "Fastest, most trusted, best value, premium…" ],
+       [ :goals, "What they're after", "More calls in the north of the area, 20 leads a month, a new service known" ],
+       [ :notes, "Notes", "Anything else that shapes the plan" ] ].each do |field, label, placeholder| %>
+    <%# herb:key field %>
+    <label class="record-form__field">
+      <span class="record-form__label"><%= label %></span>
+      <%= form.text_area field, rows: 2, class: "input full-width", placeholder: placeholder %>
+    </label>
+  <% end %>
+
+  <div class="record-form__footer">
+    <%= link_to "Cancel", market_client_path(profile.client), class: "btn btn--plain record-form__cancel", data: { form_target: "cancel" } %>
+    <button type="submit" class="btn btn--link" data-form-target="submit">
+      <span>Save</span>
+    </button>
+  </div>
+<% end %>

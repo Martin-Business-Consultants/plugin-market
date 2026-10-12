@@ -1,0 +1,171 @@
+<% @page_title = "#{@client.name} · Market" %>
+<% manage = can?(:manage_market) %>
+<% content_for :header do %>
+  <%= parent_page term(:client, count: 2), market_clients_path %>
+<% end %>
+<%= render "market/nav", current: :clients %>
+
+<section class="panel shadow txt-align-start market-card">
+  <div class="page-heading">
+    <h1 class="page-title"><%= @client.name %></h1>
+    <div class="page-heading__actions">
+      <% if manage && Market::Plan.ai_available_for?(@client) %>
+        <%= button_to market_client_plans_path(@client), class: "btn btn--circle-mobile", form_class: "display-contents", disabled: @plan&.working? do %>
+          <%= icon_tag "ai" %>
+          <span><%= @plan ? "Plan again with AI" : "Plan with AI" %></span>
+        <% end %>
+      <% end %>
+      <% if manage && @profile.domain %>
+        <%= button_to market_client_check_path(@client), class: "btn btn--circle-mobile", form_class: "display-contents", title: "Read #{@profile.domain} again" do %>
+          <%= icon_tag "refresh" %>
+          <span>Read site</span>
+        <% end %>
+      <% end %>
+      <% if manage %>
+        <%= link_to edit_market_client_path(@client), class: "btn btn--circle-mobile", data: { keys: "e" } do %>
+          <%= icon_tag "pencil" %>
+          <span>Edit</span>
+          <kbd class="hide-on-touch">E</kbd>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="record-meta txt-small">
+    <%= link_to "#{term(:client)} page", client_path(@client, tab: "plugin-market"), class: "txt-link" %>
+    <% if @profile.industry %>
+      <%= link_to @profile.industry.name, market_industry_path(@profile.industry), class: "txt-link" %>
+    <% end %>
+    <% if @profile.website %>
+      <%= link_to @profile.domain, @profile.website, class: "txt-link", target: "_blank", rel: "noopener" %>
+    <% end %>
+  </div>
+
+  <% if @profile.gaps.any? %>
+    <p class="market-notice txt-small margin-none">
+      Plans are only as good as what's known. Missing: <%= @profile.gaps.to_sentence %><%= "; no competitors yet" if @rivalries.empty? %>.
+      <% if manage %><%= link_to "Fill it in", edit_market_client_path(@client), class: "txt-link" %><% end %>
+    </p>
+  <% end %>
+
+  <dl class="record-facts txt-small market-profile">
+    <% [ [ "Where they serve", @profile.service_area ], [ "What they sell", @profile.offerings ], [ "Who they serve", @profile.audience ],
+         [ "How they want to be seen", @profile.positioning ], [ "What they're after", @profile.goals ], [ "Notes", @profile.notes ] ].each do |label, value| %>
+      <%# herb:key label %>
+      <% next if value.blank? %>
+      <dt><%= label %></dt>
+      <dd class="market-text"><%= value %></dd>
+    <% end %>
+  </dl>
+</section>
+
+<section class="panel shadow txt-align-start market-card" id="competitors">
+  <header class="market-card__header">
+    <h2 class="market-card__title">Against the competition</h2>
+    <span class="txt-x-small txt-subtle">From each website, read weekly</span>
+  </header>
+
+  <div class="market-table-wrap">
+    <table class="data-table market-compare">
+      <thead>
+        <tr>
+          <th>Business</th><th>Pages</th><th>Posts <span class="txt-subtle">(90 days)</span></th><th>Locations</th><th>Services</th><th>Updated</th>
+          <% Market::MarketHelper::MARKET_COLUMNS.each_key do |column| %>
+            <%# herb:key column %>
+            <th><%= column %></th>
+          <% end %>
+          <th>Socials</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="market-compare__own">
+          <td>
+            <strong><%= @client.name %></strong>
+            <div class="txt-x-small txt-subtle"><%= @profile.domain ? market_checked_text(@own) : "No website on the profile" %></div>
+          </td>
+          <%= render "market/shared/reading_cells", reading: @own %>
+        </tr>
+        <% @rivalries.each do |rivalry| %>
+          <%# herb:key rivalry.id %>
+          <% competitor = rivalry.competitor %>
+          <% reading = @readings[competitor.id] %>
+          <tr>
+            <td>
+              <%= link_to competitor.name, market_competitor_path(competitor), class: "txt-ink font-weight-bold" %>
+              <div class="market-tags">
+                <span class="txt-x-small txt-subtle"><%= rivalry.kind_label %></span>
+                <%= market_threat_tag rivalry %>
+                <% if manage %>
+                  <div class="display-contents" data-controller="dialog" data-dialog-modal-value="true" data-action="keydown.esc->dialog#close:stop">
+                    <button type="button" class="btn btn--plain txt-small" data-action="dialog#open" title="Change how <%= competitor.name %> competes">
+                      <%= icon_tag "pencil" %><span class="for-screen-reader">Change how <%= competitor.name %> competes</span>
+                    </button>
+                    <dialog class="dialog panel market-dialog" data-dialog-target="dialog" aria-label="<%= competitor.name %> against <%= @client.name %>">
+                      <h2 class="dialog__title"><%= competitor.name %> against <%= @client.name %></h2>
+                      <%= form_with model: rivalry, url: market_client_rivalry_path(@client, rivalry), method: :patch, scope: :rivalry, class: "record-form" do |form| %>
+                        <div class="record-form__row">
+                          <label class="record-form__field">
+                            <span class="record-form__label">How</span>
+                            <%= form.select :kind, Market::Rivalry::KINDS.invert, {}, class: "input input--select full-width" %>
+                          </label>
+                          <label class="record-form__field">
+                            <span class="record-form__label">Threat</span>
+                            <%= form.select :threat, Market::Rivalry::THREATS.map { [ it.capitalize, it ] }, {}, class: "input input--select full-width" %>
+                          </label>
+                        </div>
+                        <label class="record-form__field">
+                          <span class="record-form__label">Notes</span>
+                          <%= form.text_area :notes, rows: 3, class: "input full-width", placeholder: "How they compete for #{@client.name}" %>
+                        </label>
+                        <div class="record-form__footer">
+                          <button type="button" class="btn btn--plain" data-action="dialog#close">Cancel</button>
+                          <button type="submit" class="btn btn--link">Save</button>
+                        </div>
+                      <% end %>
+                      <%= button_to "Take #{competitor.name} off #{@client.name}'s list", market_client_rivalry_path(@client, rivalry), method: :delete, class: "btn btn--plain txt-small market-danger" %>
+                    </dialog>
+                  </div>
+                <% end %>
+              </div>
+            </td>
+            <%= render "market/shared/reading_cells", reading: reading %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <% if @rivalries.empty? %>
+    <p class="txt-small txt-subtle margin-none">No competitors yet. Add the businesses <%= @client.name %> loses customers to, and the one they'd most like to be.</p>
+  <% end %>
+
+  <% if manage %>
+    <div class="market-adds">
+      <details class="market-add">
+        <summary class="btn txt-small"><%= icon_tag "add" %> <span>Add a competitor</span></summary>
+        <%= form_with url: market_competitors_path, scope: :competitor, class: "market-add__form txt-small" do |form| %>
+          <%= form.hidden_field :client_id, value: @client.id %>
+          <%= form.hidden_field :industry_id, value: @profile.industry_id %>
+          <%= form.text_field :name, class: "input", placeholder: "Name", required: true, autocomplete: "off", aria: { label: "Name" } %>
+          <%= form.url_field :website, class: "input", placeholder: "https://their-site.com", autocomplete: "off", aria: { label: "Website" } %>
+          <%= form.select :kind, Market::Rivalry::KINDS.invert, {}, class: "input input--select", aria: { label: "Kind" } %>
+          <%= form.select :threat, Market::Rivalry::THREATS.map { [ "#{it.capitalize} threat", it ] }, { selected: "medium" }, class: "input input--select", aria: { label: "Threat" } %>
+          <button type="submit" class="btn btn--link txt-small">Add</button>
+        <% end %>
+      </details>
+      <% if @others.any? %>
+        <details class="market-add">
+          <summary class="btn txt-small"><%= icon_tag "eye" %> <span>Add one already watched</span></summary>
+          <%= form_with url: market_client_rivalries_path(@client), scope: :rivalry, class: "market-add__form txt-small" do |form| %>
+            <%= form.select :competitor_id, @others, {}, class: "input input--select", aria: { label: "Competitor" } %>
+            <%= form.select :kind, Market::Rivalry::KINDS.invert, {}, class: "input input--select", aria: { label: "Kind" } %>
+            <%= form.select :threat, Market::Rivalry::THREATS.map { [ "#{it.capitalize} threat", it ] }, { selected: "medium" }, class: "input input--select", aria: { label: "Threat" } %>
+            <button type="submit" class="btn btn--link txt-small">Add</button>
+          <% end %>
+        </details>
+      <% end %>
+    </div>
+  <% end %>
+</section>
+
+<%= render "market/profiles/plan", client: @client, profile: @profile, plan: @plan, manage: manage %>
+<%= render "market/profiles/opportunities", client: @client, opportunities: @opportunities, manage: manage %>

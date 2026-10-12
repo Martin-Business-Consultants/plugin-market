@@ -1,0 +1,27 @@
+<% @page_title = "#{@client.name} · Plans" %>
+<% content_for :header do %>
+  <%= parent_page @client.name, market_client_path(@client) %>
+<% end %>
+<%= render "market/nav", current: :clients %>
+
+<section class="panel shadow txt-align-start market-card">
+  <h1 class="page-title"><%= @client.name %>'s plans</h1>
+  <% if @plans.empty? %>
+    <p class="txt-small txt-subtle margin-none">None drafted yet. <%= link_to "Back to #{@client.name}'s market", market_client_path(@client), class: "txt-link" %>.</p>
+  <% end %>
+  <% @plans.each do |plan| %>
+    <%# herb:key plan.id %>
+    <article class="market-plan">
+      <header class="market-card__header">
+        <h2 class="market-card__title"><%= l plan.created_at.to_date, format: :long %></h2>
+        <span class="txt-x-small txt-subtle"><%= plan.user.display_name %> · <%= plan.ready? ? pluralize(plan.opportunities.size, "opportunity") + " added" : plan.state %></span>
+      </header>
+      <% if plan.ready? %>
+        <div class="market-text txt-small"><%= plan.summary %></div>
+        <% if plan.positioning %><p class="txt-small font-weight-bold margin-none"><%= plan.positioning %></p><% end %>
+      <% elsif plan.failed? %>
+        <p class="txt-small txt-subtle margin-none">Didn't finish: <%= plan.error %></p>
+      <% end %>
+    </article>
+  <% end %>
+</section>

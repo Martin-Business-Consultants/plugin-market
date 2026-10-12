@@ -1,0 +1,14 @@
+<%# locals: (current:) %>
+<%# The Market sidebar beside every page of the plugin: the big picture, then the lists. %>
+<% unless content_for?(:header) %>
+  <% content_for :header do %>
+    <h1 class="header__title">Market</h1>
+  <% end %>
+<% end %>
+<% section_nav "Market" do %>
+  <%= section_nav_link "Overview", market_overview_path, icon: "home", current: current == :overview %>
+  <%= section_nav_link "Opportunities", market_opportunities_path, icon: "bolt", current: current == :opportunities %>
+  <%= section_nav_link term(:client, count: 2), market_clients_path, icon: "everyone", current: current == :clients %>
+  <%= section_nav_link "Industries", market_industries_path, icon: "grid", current: current == :industries %>
+  <%= section_nav_link "Competitors", market_competitors_path, icon: "eye", current: current == :competitors %>
+<% end %>

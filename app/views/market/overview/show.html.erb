@@ -1,0 +1,124 @@
+<% @page_title = "Market" %>
+<%= render "market/nav", current: :overview %>
+
+<section class="market-stats">
+  <%= link_to market_clients_path, class: "panel shadow market-stat" do %>
+    <span class="market-stat__figure"><%= @industries.size %></span>
+    <span class="txt-small txt-subtle"><%= "industry".pluralize(@industries.size).capitalize %></span>
+  <% end %>
+  <%= link_to market_competitors_path, class: "panel shadow market-stat" do %>
+    <span class="market-stat__figure"><%= @competitor_count %></span>
+    <span class="txt-small txt-subtle"><%= "competitor".pluralize(@competitor_count).capitalize %> watched</span>
+  <% end %>
+  <%= link_to market_opportunities_path, class: "panel shadow market-stat" do %>
+    <span class="market-stat__figure"><%= @open_count %></span>
+    <span class="txt-small txt-subtle">Open <%= "opportunity".pluralize(@open_count) %>, <%= @quick_wins %> quick <%= "win".pluralize(@quick_wins) %></span>
+  <% end %>
+  <%= link_to market_clients_path(show: "gaps"), class: "panel shadow market-stat" do %>
+    <span class="market-stat__figure"><%= @unprofiled.size %></span>
+    <span class="txt-small txt-subtle"><%= term(:client, count: @unprofiled.size) %> with no industry yet</span>
+  <% end %>
+</section>
+
+<div class="market-columns">
+  <section class="panel shadow txt-align-start market-card">
+    <header class="market-card__header">
+      <h2 class="market-card__title">Best opportunities</h2>
+      <%= link_to "All", market_opportunities_path, class: "txt-link txt-small" %>
+    </header>
+    <% if @opportunities.any? %>
+      <ul class="market-list">
+        <% @opportunities.each do |opportunity| %>
+          <%# herb:key opportunity.id %>
+          <li class="market-list__row">
+            <div class="market-list__main">
+              <%= link_to opportunity.title, market_client_path(opportunity.client, anchor: "opportunity_#{opportunity.id}"), class: "txt-ink font-weight-bold" %>
+              <span class="txt-x-small txt-subtle"><%= opportunity.client.name %> · <%= opportunity.channel_label %> · <%= opportunity.horizon_label %></span>
+            </div>
+            <div class="market-tags">
+              <%= market_impact_tag opportunity %>
+              <%= market_effort_tag opportunity %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="txt-small txt-subtle margin-none">None open. Draft a plan from a <%= term(:client).downcase %>'s market page to find some.</p>
+    <% end %>
+  </section>
+
+  <section class="panel shadow txt-align-start market-card">
+    <header class="market-card__header">
+      <h2 class="market-card__title">Industries</h2>
+      <%= link_to "All", market_industries_path, class: "txt-link txt-small" %>
+    </header>
+    <% if @industries.any? %>
+      <ul class="market-list">
+        <% @industries.each do |industry| %>
+          <%# herb:key industry.id %>
+          <li class="market-list__row">
+            <div class="market-list__main">
+              <%= link_to industry.name, market_industry_path(industry), class: "txt-ink font-weight-bold" %>
+              <% if industry.naics_code %>
+                <span class="txt-x-small txt-subtle">NAICS <%= industry.naics_code %></span>
+              <% end %>
+            </div>
+            <span class="txt-small txt-subtle txt-nowrap">
+              <%= pluralize(@clients_by_industry[industry.id].to_i, term(:client).downcase) %> · <%= pluralize(@competitors_by_industry[industry.id].to_i, "competitor") %>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="txt-small txt-subtle margin-none">No industries yet. Set one on a <%= term(:client).downcase %>'s market profile, or let a plan suggest it.</p>
+    <% end %>
+  </section>
+
+  <section class="panel shadow txt-align-start market-card">
+    <header class="market-card__header">
+      <h2 class="market-card__title">What competitors changed</h2>
+      <span class="txt-x-small txt-subtle">Last 30 days</span>
+    </header>
+    <% if @changes.any? %>
+      <ul class="market-list">
+        <% @changes.each do |snapshot| %>
+          <%# herb:key snapshot.id %>
+          <li class="market-list__row market-list__row--stacked">
+            <div class="market-list__main">
+              <%= link_to snapshot.subject.name, market_competitor_path(snapshot.subject), class: "txt-ink font-weight-bold" %>
+              <span class="txt-x-small txt-subtle"><%= l snapshot.taken_at.to_date, format: :short %></span>
+            </div>
+            <ul class="market-changes txt-small">
+              <% snapshot.differences.first(4).each_with_index do |change, index| %>
+                <%# herb:key index %>
+                <li><%= change %></li>
+              <% end %>
+            </ul>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="txt-small txt-subtle margin-none">Nothing changed that the weekly readings noticed. Add competitors with their websites to watch them.</p>
+    <% end %>
+  </section>
+
+  <section class="panel shadow txt-align-start market-card">
+    <header class="market-card__header">
+      <h2 class="market-card__title"><%= term(:client, count: 2) %> to map</h2>
+      <%= link_to "All", market_clients_path(show: "gaps"), class: "txt-link txt-small" %>
+    </header>
+    <% if @unprofiled.any? %>
+      <ul class="market-list">
+        <% @unprofiled.first(10).each do |client| %>
+          <%# herb:key client.id %>
+          <li class="market-list__row">
+            <%= link_to client.name, market_client_path(client), class: "txt-ink" %>
+            <span class="txt-x-small txt-subtle">No industry yet</span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="txt-small txt-subtle margin-none">Every active <%= term(:client).downcase %> has an industry.</p>
+    <% end %>
+  </section>
+</div>

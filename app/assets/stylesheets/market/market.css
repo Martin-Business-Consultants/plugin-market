@@ -1,0 +1,369 @@
+/* Linked on every page while Market is on (Runwell::Plugins.stylesheet). Runwell's design tokens
+   (docs/theming.md), so themes reach these too. */
+@layer components {
+  /* The overview's figures, four across on a wide screen. */
+  .market-stats {
+    display: grid;
+    gap: var(--block-space);
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    margin-block-end: var(--block-space);
+  }
+
+  .market-stat {
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-space-half);
+    padding: var(--block-space);
+    text-decoration: none;
+
+    &:hover {
+      background-color: var(--color-hover);
+    }
+  }
+
+  .market-stat__figure {
+    font-size: var(--text-xx-large);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* Cards two across from 960px. */
+  .market-columns {
+    display: grid;
+    gap: var(--block-space);
+    grid-template-columns: minmax(0, 1fr);
+    margin-block-end: var(--block-space);
+
+    @media (min-width: 960px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    > .market-card {
+      margin-block-end: 0;
+    }
+  }
+
+  .market-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-space);
+    margin-block-end: var(--block-space);
+    padding: var(--block-space-double) var(--inline-space-double);
+  }
+
+  .market-card__header {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--inline-space);
+    justify-content: space-between;
+  }
+
+  .market-card__title {
+    font-size: var(--text-medium);
+    font-weight: 650;
+    margin: 0;
+  }
+
+  .market-list,
+  .market-plain-list,
+  .market-changes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .market-list {
+    display: flex;
+    flex-direction: column;
+
+    > li + li {
+      border-block-start: 1px solid var(--color-ink-lightest);
+    }
+  }
+
+  .market-list__row {
+    align-items: center;
+    display: flex;
+    gap: var(--inline-space);
+    justify-content: space-between;
+    padding-block: var(--block-space-half);
+  }
+
+  .market-list__row--stacked {
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--block-space-half);
+  }
+
+  .market-list__main {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .market-changes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+
+    > li::before {
+      color: var(--color-ink-light);
+      content: "· ";
+    }
+  }
+
+  .market-changed {
+    color: var(--color-link);
+  }
+
+  .market-tags {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--inline-space-half);
+  }
+
+  .market-text {
+    overflow-wrap: anywhere;
+    white-space: pre-line;
+  }
+
+  .market-notice {
+    background-color: var(--color-highlight);
+    border-radius: var(--radius-control, 0.5rem);
+    padding: var(--block-space-half) var(--inline-space);
+  }
+
+  .market-notice--negative {
+    background-color: oklch(var(--lch-red-lightest));
+    color: var(--color-negative);
+  }
+
+  /* Impact, effort and threat: high is loud, low is quiet. */
+  .market-level {
+    border-radius: 99em;
+    font-size: var(--text-x-small);
+    font-weight: 600;
+    padding: 0.1em 0.6em;
+  }
+
+  .market-level--high {
+    background-color: oklch(var(--lch-green-lightest));
+    color: oklch(var(--lch-green-darkest));
+  }
+
+  .market-level--medium {
+    background-color: var(--color-ink-lightest);
+    color: var(--color-ink-dark);
+  }
+
+  .market-level--danger {
+    background-color: oklch(var(--lch-red-lightest));
+    color: var(--color-negative);
+  }
+
+  .market-level--low {
+    color: var(--color-ink-medium);
+  }
+
+  /* A tool a website runs: lit green, with a soft glow. */
+  .market-dot {
+    background-color: var(--color-ink-lighter);
+    block-size: 0.55em;
+    border-radius: 50%;
+    display: inline-block;
+    inline-size: 0.55em;
+    vertical-align: middle;
+  }
+
+  .market-dot--on {
+    background-color: oklch(var(--lch-green-medium));
+    box-shadow:
+      0 0 0 0.15em oklch(var(--lch-green-medium) / 20%),
+      0 0 0.6em 0.1em oklch(var(--lch-green-medium) / 55%);
+  }
+
+  /* The comparison: the client first, tinted, then each competitor. Scrolls sideways when narrow. */
+  .market-table-wrap {
+    overflow-x: auto;
+  }
+
+  .market-compare {
+    font-size: var(--text-small);
+
+    th,
+    td {
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    td:first-child {
+      white-space: normal;
+    }
+  }
+
+  .market-compare__own > td {
+    background-color: var(--color-selected-light);
+  }
+
+  /* A small menu that opens under its button: a rivalry's form, Plan as work. */
+  .market-menu {
+    display: inline-block;
+    position: relative;
+
+    > summary {
+      list-style: none;
+    }
+
+    > summary::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  .market-menu__panel {
+    background-color: var(--color-canvas);
+    border: 1px solid var(--color-ink-lighter);
+    border-radius: var(--radius-control, 0.5rem);
+    box-shadow: 0 0.5em 1.5em oklch(var(--lch-black) / 12%);
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-space-half);
+    inline-size: min(20rem, 80vw);
+    inset-block-start: calc(100% + 0.25em);
+    inset-inline-end: 0;
+    padding: var(--block-space-half);
+    position: absolute;
+    white-space: normal;
+    z-index: 10;
+  }
+
+  .market-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-space);
+    inline-size: min(32rem, 92vw);
+    padding: var(--block-space-double) var(--inline-space-double);
+
+    &:not([open]) {
+      display: none;
+    }
+  }
+
+  .market-closed > summary,
+  .market-add > summary {
+    cursor: pointer;
+  }
+
+  .market-closed > summary::before {
+    content: "▸ ";
+  }
+
+  .market-closed[open] > summary::before {
+    content: "▾ ";
+  }
+
+  .market-adds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--inline-space);
+  }
+
+  .market-add[open] {
+    display: flex;
+    flex: 1 1 100%;
+    flex-direction: column;
+    gap: var(--block-space-half);
+  }
+
+  .market-add__form {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--inline-space-half);
+  }
+
+  .market-working {
+    align-items: center;
+    display: flex;
+    gap: var(--inline-space-half);
+  }
+
+  .market-summary {
+    font-size: var(--text-normal);
+    line-height: 1.55;
+  }
+
+  .market-angle {
+    border-inline-start: 3px solid oklch(var(--lch-green-medium));
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+    padding-inline-start: var(--inline-space);
+  }
+
+  .market-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-space-half);
+  }
+
+  .market-suggestion {
+    align-items: center;
+    border: 1px dashed var(--color-ink-lighter);
+    border-radius: var(--radius-control, 0.5rem);
+    display: flex;
+    gap: var(--inline-space);
+    justify-content: space-between;
+    padding: var(--block-space-half) var(--inline-space);
+  }
+
+  .market-horizon {
+    font-size: var(--text-small);
+    margin: 0;
+  }
+
+  .market-opportunity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-space-half);
+    padding-block: var(--block-space);
+  }
+
+  .market-opportunity__head {
+    align-items: start;
+    display: flex;
+    gap: var(--inline-space);
+    justify-content: space-between;
+  }
+
+  .market-opportunity__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+  }
+
+  .market-opportunity__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--inline-space-half);
+  }
+
+  .market-plan + .market-plan {
+    border-block-start: 1px solid var(--color-ink-lightest);
+    padding-block-start: var(--block-space);
+  }
+
+  .market-plan {
+    display: flex;
+    flex-direction: column;
+    gap: var(--block-space-half);
+  }
+
+  .market-danger {
+    color: var(--color-negative);
+  }
+}

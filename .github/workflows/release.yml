@@ -1,0 +1,20 @@
+# Push a tag like v0.2.0 (after bumping lib/<key>/version.rb) and this publishes a GitHub release,
+# which installs offer as an update in Settings > Plugins.
+name: Release
+on:
+  push:
+    tags: [ "v*" ]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the version matches the tag
+        run: |
+          version=$(ruby -e 'load Dir["lib/*/version.rb"].first; puts Object.const_get(Dir["lib/*/version.rb"].first.split("/")[1].split("_").map(&:capitalize).join)::VERSION')
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "version.rb says $version, the tag is $GITHUB_REF_NAME"; exit 1; }
+      - run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
