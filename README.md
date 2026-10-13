@@ -1,3 +1,5 @@
+> **Archived.** Market is now a Libre Publish plugin: [cms-market](https://github.com/Martin-Business-Consultants/cms-market). This Runwell version isn't maintained; don't install it (and never into Libre Publish).
+
 # Market
 
 A plugin for [Runwell](https://github.com/Martin-Business-Consultants/runwellv2): the big picture
